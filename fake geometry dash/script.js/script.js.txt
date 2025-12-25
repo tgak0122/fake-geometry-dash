@@ -1,0 +1,136 @@
+// Canvas setup
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Player setup
+let player = {
+  x: 50,
+  y: canvas.height - 50,
+  width: 30,
+  height: 30,
+  yVelocity: 0
+};
+
+const gravity = 0.8;
+const jumpStrength = -12;
+
+// Obstacles setup
+let obstacles = [];
+const obstacleWidth = 30;
+
+// Score
+let score = 0;
+let scoreMultiplier = 1;
+
+// Spawn obstacles every 2 seconds
+setInterval(spawnObstacle, 2000);
+
+function spawnObstacle() {
+  obstacles.push({
+    x: canvas.width,
+    y: canvas.height - 30,
+    width: obstacleWidth,
+    height: 30
+  });
+}
+
+// Player jump
+function jump() {
+  if (player.y === canvas.height - player.height) {
+    player.yVelocity = jumpStrength;
+  }
+}
+document.addEventListener('keydown', jump);
+document.addEventListener('mousedown', jump); // allow click to jump
+
+// Game update functions
+function updatePlayer() {
+  player.yVelocity += gravity;
+  player.y += player.yVelocity;
+
+  // Floor collision
+  if (player.y > canvas.height - player.height) {
+    player.y = canvas.height - player.height;
+    player.yVelocity = 0;
+  }
+}
+
+function updateObstacles() {
+  for (let obs of obstacles) {
+    obs.x -= 5; // speed
+  }
+  // Remove offscreen obstacles and increase score
+  obstacles = obstacles.filter(obs => {
+    if (obs.x + obs.width < 0) {
+      score += 1 * scoreMultiplier;
+      return false;
+    }
+    return true;
+  });
+}
+
+// Collision detection
+function checkCollision() {
+  for (let obs of obstacles) {
+    if (
+      player.x < obs.x + obs.width &&
+      player.x + player.width > obs.x &&
+      player.y < obs.y + obs.height &&
+      player.y + player.height > obs.y
+    ) {
+      alert("Game Over! Score: " + score);
+      // Reset game
+      player.y = canvas.height - player.height;
+      player.yVelocity = 0;
+      obstacles = [];
+      score = 0;
+      scoreMultiplier = 1;
+    }
+  }
+}
+
+// Draw everything
+function drawPlayer() {
+  ctx.fillStyle = 'red';
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+}
+
+function drawObstacles() {
+  ctx.fillStyle = 'green';
+  for (let obs of obstacles) {
+    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+  }
+}
+
+function drawScore() {
+  ctx.fillStyle = 'black';
+  ctx.font = '20px Arial';
+  ctx.fillText('Score: ' + score, 10, 30);
+}
+
+// Game loop
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  updatePlayer();
+  updateObstacles();
+  checkCollision();
+
+  drawPlayer();
+  drawObstacles();
+  drawScore();
+
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+
+// Optional: 2x points shop function
+function buy2xPoints() {
+  if (score >= 50) {
+    score -= 50;
+    scoreMultiplier = 2;
+  } else {
+    alert("Not enough points!");
+  }
+}
